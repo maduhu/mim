@@ -85,7 +85,6 @@
     <!-- Language Location Codes Import Service -->
     <osgi:service ref="languageLocationImportService" interface="org.motechproject.nms.region.csv.LanguageLocationImportService" />
 
-
     <!-- Alert Service -->
     <osgi:reference id="alertsService"
                     interface="org.motechproject.alerts.contract.AlertService" />
