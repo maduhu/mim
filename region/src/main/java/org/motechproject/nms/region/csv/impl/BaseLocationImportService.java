@@ -140,6 +140,8 @@ public abstract class BaseLocationImportService<T> {
 
     protected abstract Map<String, String> getFieldNameMapping();
 
+    protected abstract void upsert(T instance);
+
     private String createErrorMessage(Set<ConstraintViolation<?>> violations, int rowNumber) {
         if (CollectionUtils.isNotEmpty(violations)) {
             return String.format("CSV instance error [row: %d]: validation failed for instance of type %s, violations: %s", rowNumber, type.getName(), ConstraintViolationUtils.toString(violations));

@@ -2,9 +2,11 @@ package org.motechproject.nms.region.csv.impl;
 
 import org.motechproject.nms.csv.utils.GetLong;
 import org.motechproject.nms.csv.utils.GetString;
+import org.motechproject.nms.csv.utils.Store;
 import org.motechproject.nms.region.csv.StateImportService;
 import org.motechproject.nms.region.domain.State;
 import org.motechproject.nms.region.repository.StateDataService;
+import org.motechproject.nms.region.service.DistrictService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.supercsv.cellprocessor.ift.CellProcessor;
@@ -20,10 +22,12 @@ public class StateImportServiceImpl extends BaseLocationImportService<State> imp
 
     public static final String STATE_CODE_FIELD = "code";
     public static final String NAME_FIELD = "name";
+    public StateDataService stateDataService;
 
     @Autowired
     public StateImportServiceImpl(StateDataService stateDataService) {
         super(State.class, stateDataService);
+        this.stateDataService = stateDataService;
     }
 
     @Override
@@ -40,5 +44,18 @@ public class StateImportServiceImpl extends BaseLocationImportService<State> imp
         mapping.put(STATE_ID, STATE_CODE_FIELD);
         mapping.put(NAME, NAME_FIELD);
         return mapping;
+    }
+
+    @Override
+    protected void upsert(State state) {
+        State existingState = stateDataService.findByCode(state.getCode());
+        if (existingState == null) {
+            stateDataService.create(state);
+        } else {
+            existingState.setCircles(state.getCircles());
+            existingState.setName(state.getName());
+            existingState.setDistricts(state.getDistricts());
+            stateDataService.update(existingState);
+        }
     }
 }
