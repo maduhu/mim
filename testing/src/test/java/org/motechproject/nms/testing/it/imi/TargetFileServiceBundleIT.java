@@ -106,6 +106,7 @@ public class TargetFileServiceBundleIT extends BasePaxIT {
 
     @Before
     public void before() {
+
         testingService.clearDatabase();
 
         localObdDirBackup = ImiTestHelper.setupTestDir(settingsService, LOCAL_OBD_DIR, "obd-local-dir-it");
@@ -262,6 +263,50 @@ public class TargetFileServiceBundleIT extends BasePaxIT {
         assertTrue(targetFileService != null);
     }
 
+    @Test
+    // make sure we can create & schedule the second message in a two message/week campaign
+    public void testNIP61() throws IOException {
+
+        //Set the clock 5 days back
+        DateTimeUtils.setCurrentMillisFixed(DateTime.now().minusDays(5).getMillis());
+
+        //Should be picked up because IVR subscriptions all start today + 1 day and this is the day of the
+        //second message in a two message (ie: pregnancy in our sample) campaign
+        Subscriber subscriber = new Subscriber(1000000000L, rh.kannadaLanguage(), rh.karnatakaCircle());
+        subscriberDataService.create(subscriber);
+        Subscription subscription = subscriptionService.createSubscription(1000000000L, rh.kannadaLanguage(),
+                sh.pregnancyPack(), SubscriptionOrigin.IVR);
+
+        //Set the clock back to normal
+        DateTimeUtils.setCurrentMillisSystem();
+
+        TargetFileNotification tfn = targetFileService.generateTargetFile();
+        assertNotNull(tfn);
+
+        assertEquals(1, (int) tfn.getRecordsCount());
+
+        //read the file to get record
+        File targetDir = new File(settingsService.getSettingsFacade().getProperty("imi.local_obd_dir"));
+        File targetFile = new File(targetDir, tfn.getFileName());
+        try (InputStream is = Files.newInputStream(targetFile.toPath());
+             BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+
+            // skip the header
+            reader.readLine();
+
+            String line = reader.readLine();
+            // Assert we have a subscription
+            assertNotNull(line);
+
+            String[] fields = line.split(",");
+
+            RequestId requestId = RequestId.fromString(fields[0]);
+
+            // assert we have the right subscription
+            assertEquals(requestId.getSubscriptionId(), subscription.getSubscriptionId());
+        }
+
+    }
 
     // un-ignore to create a large sample OBD file
     @Ignore

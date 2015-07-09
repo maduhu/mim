@@ -14,15 +14,12 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity(maxFetchDepth = -1, tableName = "nms_subscriptions")
-@Index(name = "status_endDate_composit_idx", members = { "status", "endDate" })
+@Index(name = "status_endDate_composite_idx", members = { "status", "endDate" })
 public class Subscription {
 
     private static final int DAYS_IN_WEEK = 7;
-    private static final int WEEKDAY1 = 0;
-    private static final int WEEKDAY2 = 1;
-    private static final int WEEKDAY5 = 4;
-    private static final int WEEKDAY6 = 5;
-
+    private static final int FOUR_DAYS_LATER = 4;
+    private static final int TWO_MESSAGES_PER_WEEK = 2;
 
     @Field
     @Unique
@@ -57,7 +54,10 @@ public class Subscription {
     private DateTime endDate;
 
     @Field
-    private DayOfTheWeek startDayOfTheWeek;
+    private DayOfTheWeek firstMessageDayOfWeek;
+
+    @Field
+    private DayOfTheWeek secondMessageDayOfWeek;
 
     @Field
     private DeactivationReason deactivationReason;
@@ -66,12 +66,23 @@ public class Subscription {
     private boolean needsWelcomeMessage;
 
     public Subscription(Subscriber subscriber, SubscriptionPack subscriptionPack, SubscriptionOrigin origin) {
+        this(subscriber, subscriptionPack, origin, null);
+    }
+
+    public Subscription(Subscriber subscriber, SubscriptionPack subscriptionPack, SubscriptionOrigin subscriptionOrigin, DateTime startDate) {
         this.subscriptionId = UUID.randomUUID().toString();
         this.subscriber = subscriber;
         this.subscriptionPack = subscriptionPack;
-        this.origin = origin;
+        this.origin = subscriptionOrigin;
         if (origin == SubscriptionOrigin.MCTS_IMPORT) {
             needsWelcomeMessage = true;
+        }
+        this.startDate = startDate;
+        this.firstMessageDayOfWeek = DayOfTheWeek.fromDateTime(startDate);
+
+        if (subscriptionPack.getMessagesPerWeek() == TWO_MESSAGES_PER_WEEK) {
+            this.secondMessageDayOfWeek = DayOfTheWeek.fromInt(
+                    (startDate.getDayOfWeek() + FOUR_DAYS_LATER) % DAYS_IN_WEEK);
         }
     }
 
@@ -113,7 +124,7 @@ public class Subscription {
 
     public void setStartDate(DateTime startDate) {
         this.startDate = startDate;
-        this.startDayOfTheWeek = DayOfTheWeek.fromInt(startDate.getDayOfWeek());
+        this.firstMessageDayOfWeek = DayOfTheWeek.fromInt(startDate.getDayOfWeek());
     }
 
     public DateTime getEndDate() {
@@ -124,8 +135,20 @@ public class Subscription {
         this.endDate = endDate;
     }
 
-    public DayOfTheWeek getStartDayOfTheWeek() {
-        return startDayOfTheWeek;
+    public DayOfTheWeek getFirstMessageDayOfWeek() {
+        return firstMessageDayOfWeek;
+    }
+
+    public void setFirstMessageDayOfWeek(DayOfTheWeek firstMessageDayOfWeek) {
+        this.firstMessageDayOfWeek = firstMessageDayOfWeek;
+    }
+
+    public DayOfTheWeek getSecondMessageDayOfWeek() {
+        return secondMessageDayOfWeek;
+    }
+
+    public void setSecondMessageDayOfWeek(DayOfTheWeek secondMessageDayOfWeek) {
+        this.secondMessageDayOfWeek = secondMessageDayOfWeek;
     }
 
     public DeactivationReason getDeactivationReason() { return deactivationReason; }
@@ -160,11 +183,12 @@ public class Subscription {
         if (daysIntoPack > 0 && date.isBefore(startDate)) {
             // there is no message due
             throw new IllegalStateException(
-                    String.format("Subscription with ID %s is not due for any scheduled message", subscriptionId));
+                    String.format("Subscription with ID %s is not due for any scheduled message until %s", subscriptionId, startDate));
         }
-        int messageIndex = -1;
+
         int currentWeek = daysIntoPack / DAYS_IN_WEEK + 1;
-        int daysIntoWeek = daysIntoPack % DAYS_IN_WEEK; //zero-based, 0 is the first day, 6 is the last
+
+        int daysIntoWeek = daysIntoPack % DAYS_IN_WEEK + 1; //zero-based, 0 is the first day, 6 is the last
 
         if (subscriptionPack.getMessagesPerWeek() == 1) {
             //valid days for 1 msg/week are WEEKDAY1 to WEEKDAY4 (fresh + 3 retries)
@@ -186,7 +210,7 @@ public class Subscription {
         if (messageIndex == -1) {
             // there is no message due
             throw new IllegalStateException(
-                    String.format("Subscription with ID %s is not due for any scheduled message", subscriptionId));
+                    String.format("Subscription with ID %s is not due for any scheduled message today", subscriptionId));
         }
 
         return subscriptionPack.getMessages().get(messageIndex);

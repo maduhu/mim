@@ -366,6 +366,7 @@ public class TargetFileServiceImpl implements TargetFileService {
 
                 RequestId requestId = new RequestId(subscription.getSubscriptionId(),
                         TIME_FORMATTER.print(timestamp));
+
                 SubscriptionPackMessage msg = subscription.nextScheduledMessage(timestamp);
 
                 //todo: don't understand why subscriber.getLanguage() doesn't work here...

@@ -45,7 +45,7 @@ public class SubscriptionUnitTest {
         DayOfTheWeek startDayOfTheWeek = DayOfTheWeek.fromInt(startDate.getDayOfWeek());
         subscription.setStartDate(startDate);
 
-        assertEquals(startDayOfTheWeek, subscription.getStartDayOfTheWeek());
+        assertEquals(startDayOfTheWeek, subscription.getFirstMessageDayOfWeek());
     }
 
 
