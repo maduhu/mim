@@ -19,10 +19,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class SubscriptionPackMessageHelper {
 
-    private static final String weekIdFormat = "w%d_%d";
-    private static final int firstWeekId = 1;
-    private static final int firstMessageId = 1;
-    private static final int secondMessageId = 2;
+    private static final String WEEK_ID_FORMAT = "w%d_%d";
+    private static final int FIRST_WEEK_ID = 1;
+    private static final int FIRST_MESSAGE_ID = 1;
+    private static final int SECOND_MESSAGE_ID = 2;
     private static final int DAYS_IN_WEEK = 7;
     private static final Logger LOGGER = LoggerFactory.getLogger(SubscriptionPackMessageHelper.class);
 
@@ -42,7 +42,7 @@ public class SubscriptionPackMessageHelper {
 
         if ((subscription.getOrigin() == SubscriptionOrigin.MCTS_IMPORT) && subscription.getNeedsWelcomeMessage()) {
             // Subscriber has been subscribed via MCTS and may not know what Kilkari is; play welcome message this week
-            return getMessage(firstWeekId, firstMessageId);
+            return getMessage(FIRST_WEEK_ID, FIRST_MESSAGE_ID);
         }
 
         DateTime startDate = subscription.getStartDate();
@@ -58,18 +58,18 @@ public class SubscriptionPackMessageHelper {
 
         if (subscription.getSubscriptionPack().getMessagesPerWeek() == 1) {
             LOGGER.debug(String.format("Found 1 msg pack, fetching w%d_%d for subscriptionid: %s", currentWeek, 1, subscription.getSubscriptionId()));
-            return getMessage(currentWeek, firstMessageId);
+            return getMessage(currentWeek, FIRST_MESSAGE_ID);
         } else {
             if (DayOfTheWeek.fromDateTime(currentDate) == subscription.getFirstMessageDayOfWeek()) {
-                return getMessage(currentWeek, firstMessageId);
+                return getMessage(currentWeek, FIRST_MESSAGE_ID);
             } else {
-                return getMessage(currentWeek, secondMessageId);
+                return getMessage(currentWeek, SECOND_MESSAGE_ID);
             }
         }
     }
 
     public SubscriptionPackMessage getMessage(int weekId, int messageId) {
 
-        return subscriptionPackMessageDataService.byWeekId(String.format(weekIdFormat, weekId, messageId));
+        return subscriptionPackMessageDataService.byWeekId(String.format(WEEK_ID_FORMAT, weekId, messageId));
     }
 }

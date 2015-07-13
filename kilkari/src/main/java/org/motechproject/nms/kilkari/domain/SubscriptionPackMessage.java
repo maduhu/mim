@@ -2,8 +2,6 @@ package org.motechproject.nms.kilkari.domain;
 
 import org.motechproject.mds.annotations.Entity;
 import org.motechproject.mds.annotations.Field;
-import org.motechproject.mds.annotations.Ignore;
-
 
 /**
  * Models a single message in a Kilkari messaging schedule.
