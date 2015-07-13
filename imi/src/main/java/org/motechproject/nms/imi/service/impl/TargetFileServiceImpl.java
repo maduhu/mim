@@ -28,6 +28,7 @@ import org.motechproject.nms.kilkari.domain.Subscriber;
 import org.motechproject.nms.kilkari.domain.Subscription;
 import org.motechproject.nms.kilkari.domain.SubscriptionOrigin;
 import org.motechproject.nms.kilkari.domain.SubscriptionPackMessage;
+import org.motechproject.nms.kilkari.helper.SubscriptionPackMessageHelper;
 import org.motechproject.nms.kilkari.repository.CallRetryDataService;
 import org.motechproject.nms.kilkari.repository.SubscriberDataService;
 import org.motechproject.nms.kilkari.service.SubscriptionService;
@@ -75,6 +76,7 @@ public class TargetFileServiceImpl implements TargetFileService {
     private SubscriberDataService subscriberDataService;
     private CallRetryDataService callRetryDataService;
     private FileAuditRecordDataService fileAuditRecordDataService;
+    private SubscriptionPackMessageHelper subscriptionPackMessageHelper;
 
     private static String freshCheckDND = null;
     private static String freshNoCheckDND = null;
@@ -367,7 +369,7 @@ public class TargetFileServiceImpl implements TargetFileService {
                 RequestId requestId = new RequestId(subscription.getSubscriptionId(),
                         TIME_FORMATTER.print(timestamp));
 
-                SubscriptionPackMessage msg = subscription.nextScheduledMessage(timestamp);
+                SubscriptionPackMessage msg = subscriptionPackMessageHelper.getNextMessage(subscription, timestamp);
 
                 //todo: don't understand why subscriber.getLanguage() doesn't work here...
                 // it's not working because of https://applab.atlassian.net/browse/MOTECH-1678
