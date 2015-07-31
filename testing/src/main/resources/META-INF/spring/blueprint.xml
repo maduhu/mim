@@ -73,6 +73,7 @@
     <osgi:reference id="44" interface="org.motechproject.nms.csv.service.CsvAuditService" />
 
     <osgi:reference id="48" interface="org.motechproject.nms.tracking.repository.ChangeLogDataService" />
+    <osgi:reference id="49" interface="org.motechproject.mds.service.EntityService" />
 
     <osgi:reference id="tracking1" interface="org.motechproject.nms.testing.tracking.repository.TrackedSimpleDataService" />
     <osgi:reference id="tracking2" interface="org.motechproject.nms.testing.tracking.repository.DepartmentDataService" />

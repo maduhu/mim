@@ -1,7 +1,14 @@
 package org.motechproject.nms.testing.it.flw;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.mime.HttpMultipartMode;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.entity.mime.content.FileBody;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.motechproject.mds.dto.EntityDto;
+import org.motechproject.mds.service.EntityService;
 import org.motechproject.nms.flw.domain.WhitelistEntry;
 import org.motechproject.nms.flw.domain.WhitelistState;
 import org.motechproject.nms.flw.repository.ServiceUsageCapDataService;
@@ -10,15 +17,21 @@ import org.motechproject.nms.flw.repository.WhitelistStateDataService;
 import org.motechproject.nms.flw.service.WhitelistService;
 import org.motechproject.nms.region.domain.State;
 import org.motechproject.nms.region.repository.StateDataService;
+import org.motechproject.nms.testing.it.api.utils.RequestBuilder;
 import org.motechproject.nms.testing.service.TestingService;
 import org.motechproject.testing.osgi.BasePaxIT;
 import org.motechproject.testing.osgi.container.MotechNativeTestContainerFactory;
+import org.motechproject.testing.osgi.http.SimpleHttpClient;
+import org.motechproject.testing.utils.TestContext;
 import org.ops4j.pax.exam.ExamFactory;
 import org.ops4j.pax.exam.junit.PaxExam;
 import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
 import org.ops4j.pax.exam.spi.reactors.PerSuite;
 
 import javax.inject.Inject;
+
+import java.io.File;
+import java.io.IOException;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -47,6 +60,9 @@ public class WhiteListServiceBundleIT extends BasePaxIT {
 
     @Inject
     WhitelistService whitelistService;
+
+    @Inject
+    EntityService entityService;
 
     @Inject
     TestingService testingService;
@@ -171,5 +187,26 @@ public class WhiteListServiceBundleIT extends BasePaxIT {
 
         result = whitelistService.numberWhitelistedForState(nonWhitelistState, NOT_WHITELIST_CONTACT_NUMBER);
         assertTrue(result);
+    }
+
+    @Test
+    public void test() throws InterruptedException, IOException {
+        EntityDto dto = entityService.getEntityByClassName("org.motechproject.nms.flw.domain.WhitelistEntry");
+        Long entityID = dto.getId();
+        importCsvFileForLocationData(entityID, "");
+    }
+
+    private void importCsvFileForLocationData(Long entityId,
+                                                      String fileName)
+            throws InterruptedException, IOException {
+        HttpPost httpPost = new HttpPost(String.format(
+                "http://localhost:%d/mds/instances/%s/csvimport",
+                TestContext.getJettyPort(), entityId));
+        FileBody fileBody = new FileBody(new File("/home/ashish/mim/mim/testing/src/test/resources/csv/whitelist.csv"));
+        MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+        builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
+        builder.addPart("csvFile", fileBody);
+        httpPost.setEntity(builder.build());
+        SimpleHttpClient.execHttpRequest(httpPost);
     }
 }
