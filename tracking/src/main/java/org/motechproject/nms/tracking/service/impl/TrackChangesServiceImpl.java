@@ -7,6 +7,7 @@ import org.motechproject.mds.service.EntityService;
 import org.motechproject.mds.service.JdoListenerRegistryService;
 import org.motechproject.mds.util.Constants;
 import org.motechproject.mds.util.PropertyUtil;
+import org.motechproject.metrics.service.Timer;
 import org.motechproject.nms.tracking.domain.ChangeLog;
 import org.motechproject.nms.tracking.exception.TrackChangesException;
 import org.motechproject.nms.tracking.repository.ChangeLogDataService;
@@ -35,6 +36,8 @@ public class TrackChangesServiceImpl implements TrackChangesService {
     public static final String PRE_STORE = "preStore";
     public static final String PRE_DELETE = "preDelete";
     public static final String EMPTY_PACKAGE = "";
+    private Integer callCounter = 0;
+    private static final int HUNDRED = 100;
 
     private JdoListenerRegistryService jdoListenerRegistryService;
     private EntityService entityService;
@@ -85,6 +88,8 @@ public class TrackChangesServiceImpl implements TrackChangesService {
     }
 
     private void storeChangeLog(TrackChanges target) throws TrackChangesException {
+        callCounter++;
+        Timer timer = new Timer("storeChangeLog", "storeChangeLogs");
         Map<String, Change> changes = target.changes();
         Map<String, CollectionChange> collectionChanges = target.collectionChanges();
         boolean actualChange = Change.isActualChange(changes.values());
@@ -97,6 +102,9 @@ public class TrackChangesServiceImpl implements TrackChangesService {
             changeLogDataService.create(changeLog);
             changes.clear();
             collectionChanges.clear();
+        }
+        if (callCounter % HUNDRED == 0) {
+            LOGGER.debug("Took this much to store 100 Change Logs : " + timer.time());
         }
     }
 
